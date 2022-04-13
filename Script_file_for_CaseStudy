@@ -1,0 +1,217 @@
+###############################
+### Cyclistic Bike Case Study
+### Ivett
+### 4-11-2022
+###############################
+
+## install required packages
+install.packages("tidyverse")
+install.packages("janitor")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("geosphere")
+install.packages("lubridate")
+
+
+## load packages 
+library(tidyverse)
+library(janitor)
+library(dplyr)
+library(ggplot2)
+library(geosphere)
+library(lubridate)
+library(ggmap)
+
+
+apr2021 <- read_csv("202104-divvy-tripdata.csv")
+may2021 <- read_csv("202105-divvy-tripdata.csv")
+jun2021 <- read_csv("202106-divvy-tripdata.csv")
+jul2021 <- read_csv("202107-divvy-tripdata.csv")
+aug2021 <- read_csv("202108-divvy-tripdata.csv")
+sep2021 <- read_csv("202109-divvy-tripdata.csv")
+oct2021 <- read_csv("202110-divvy-tripdata.csv")
+nov2021 <- read_csv("202111-divvy-tripdata.csv")
+dec2021 <- read_csv("202112-divvy-tripdata.csv")
+jan2022 <- read_csv("202201-divvy-tripdata.csv")
+feb2022 <- read_csv("202202-divvy-tripdata.csv")
+
+##
+## Combine all 12 dataframes into one dataframe named bike_rides
+##
+bike_rides <- rbind(mar2021,apr2021,may2021,jun2021,jul2021,aug2021,sep2021,
+                    oct2021,nov2021,dec2021,jan2022,feb2022)
+##
+str(bike_rides)  # list of columns and datatypes
+##
+
+##
+head(bike_rides)        # first 6 rows in dataframe
+##
+colnames(bike_rides)   # list of column names in dataframe
+##
+nrow(bike_rides)     # number of rows in dataframe
+##
+dim(bike_rides)      # dimensions or variables in dataframe
+## 
+summary(bike_rides)  # statistical summary 
+##
+## Adding to bike_rides dataframe columns for year, month, date, day of the week
+bike_rides$date <- as.Date(bike_rides$started_at)
+bike_rides$month <- format(as.Date(bike_rides$date), "%m")
+bike_rides$day <- format(as.Date(bike_rides$date), "%d")
+bike_rides$year <- format(as.Date(bike_rides$date), "%Y")
+bike_rides$day_of_week <- format(as.Date(bike_rides$date), "%A")
+
+## Verifying updated columns 
+colnames(bike_rides)
+
+##
+head(bike_rides)   # verifying updated dataframe, first 6 rows
+##
+## Adding column to calculate ride length duration per ride
+bike_rides$ride_length <- difftime(bike_rides$ended_at, bike_rides$started_at)
+##
+str(bike_rides)    # Confirming ride_length added
+##
+glimpse(bike_rides) # Confirming data type for ride_length
+
+## To convert ride_length to numeric data type
+bike_rides$ride_length <- as.numeric(as.character(bike_rides$ride_length))
+     is.numeric(bike_rides$ride_length)
+     
+## Confirming data type changed successfully
+glimpse(bike_rides)     
+
+##
+
+
+## Inspecting bad data that will need to be removed
+## Bike rides with ride_length <=0
+sum(bike_rides$ride_length <= 0)
+
+## Removing bad data
+bike_rides <- bike_rides[!(bike_rides$ride_length <= 0),]
+      sum(bike_rides$ride_length <= 0)
+
+      
+## Adding columns for morning, afternoon, evening, night
+## Creating breaks
+breaks <- hour(hm("00:00", "6:00", "12:00", "10:00", "23:59"))
+
+## Creating labels
+labels <- c("Morning", "Afternoon", "Evening", "Night")
+
+## 
+## Defining time of day: morning, afternoon, evening, night
+bike_rides$time_of_day <- cut(x=hour(bike_rides$started_at), 
+            breaks = breaks, labels = labels, include.lowest = TRUE)
+##
+## Check column names for updates
+colnames(bike_rides)
+
+## Analysis starts
+##
+## Descriptive statistics: mean, median, max, min, 
+bike_rides %>% 
+  group_by(member_casual) %>%
+  summarise(average_ride_length = mean(ride_length),
+  median_ride_length = median(ride_length), 
+  max_ride_length = max(ride_length),
+  min_ride_length = min(ride_length))
+
+
+## Calculate total number of rides taken by members and casual riders
+bike_rides %>%
+  group_by(member_casual) %>%
+  summarise(ride_count = length(ride_id))
+
+## Calculate average ride length and number of rides per day of the week
+bike_rides %>%
+  group_by(member_casual, day_of_week) %>%
+  summarise(number_of_rides = n(),
+            average_ride_length = mean(ride_length),
+            .groups = "drop")
+
+## Compare ride lengths at different times of the day
+bike_rides %>%
+  group_by(member_casual, time_of_day) %>%
+  summarise(number_of_rides = n(),
+            average_ride_length = mean(ride_length),
+            .groups = "drop")
+
+##
+## Share findings using RStudio VISUALIZATIONS
+
+## Total rides taken by members vs casual riders
+bike_rides %>%
+  group_by(member_casual) %>%
+  summarise(ride_count = length(ride_id)) %>%
+  ggplot() + geom_col(mapping = aes(x = member_casual, 
+              y = ride_count, fill = member_casual), 
+              show.legend = FALSE) +
+                labs(title = "Total # of rides")
+
+
+## Total number of rides by type of bike
+bike_rides %>%
+  group_by(member_casual, rideable_type) %>%
+  summarise(number_of_rides = n(), .groups = "drop") %>%
+  ggplot() + geom_col(mapping = aes(x = rideable_type, y = number_of_rides,
+                                    fill = member_casual), show.legend = TRUE) +
+  labs(title = "Total rides by type of bike")
+
+
+
+## Average ride by day of the week
+bike_rides %>%
+  group_by(member_casual, day_of_week) %>%
+  summarise(average_ride_length = mean(ride_length), .groups = "drop") %>%
+  ggplot(aes(x = day_of_week, y = average_ride_length, 
+             fill = member_casual)) +
+  geom_col(width = 0.5, position = position_dodge(
+    width = 0.5)) +
+    labs(title = "Average ride length by day of the week")
+
+## Average rides per month
+bike_rides %>%
+  group_by(member_casual, month) %>%
+  summarise(average_ride_length = mean(ride_length), .groups = "drop") %>%
+  ggplot(aes(x = month, y = average_ride_length, fill = member_casual)) +
+  geom_col(width = 0.5, position = position_dodge(width = 0.5)) + 
+  labs(title = "Average ride length by month")
+
+
+## Total number of rides by month
+bike_rides %>%
+  group_by(member_casual, month) %>%
+  summarise(number_of_rides = n(), .groups = "drop") %>%
+  arrange(member_casual, month) %>%
+  ggplot(aes(x = month, y = number_of_rides, fill = member_casual)) +
+  labs(title = "Total rides by month") +
+  geom_col(width = 0.5, position = position_dodge(width = 0.5)) +
+  scale_y_continuous(labels = function(x) format(x,scientific = FALSE))
+
+
+
+
+## Average or mean distance traveled by member vs casual
+bike_rides %>%
+  group_by(member_casual) %>%
+  summarise(average_ride_distance = mean(ride_length)) %>%
+  ggplot() + geom_col(mapping = aes(x = member_casual,
+                      y = average_ride_distance, fill = member_casual),
+                      show.legend = FALSE) +
+  labs(title = "Average distance traveled")
+
+
+## Total number of rides by time of day morning, afternoon, evening, night
+bike_rides %>%
+  group_by(member_casual, time_of_day) %>%
+  summarise(number_of_rides = n(), .groups = "drop") %>%
+  ggplot() + geom_col(mapping = aes(x = time_of_day, y = number_of_rides,
+                      fill = member_casual), show.legend = TRUE) +
+  labs(title = "Total rides by time of the day")
+
+  
+  
+#######
