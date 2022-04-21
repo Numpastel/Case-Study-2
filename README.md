@@ -27,7 +27,6 @@ I’m a junior data analyst for a fictitious company named Cyclistic, a bike-sha
 The director of marketing, Ms. Lily Moreno, believes that the company’s future success will be based on maximizing the number of annual memberships. This means, turning casual riders into annual members. This is also based on Cyclistic’s financial analysts stating that annual members are much more profitable than casual riders. 
 
  
-
 Step 1 – Ask  
 
 Key Business Questions 
