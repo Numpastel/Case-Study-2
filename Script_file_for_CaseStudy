@@ -22,7 +22,7 @@ library(geosphere)
 library(lubridate)
 library(ggmap)
 
-
+## read 12 files, for months April 2021 through February 2022
 apr2021 <- read_csv("202104-divvy-tripdata.csv")
 may2021 <- read_csv("202105-divvy-tripdata.csv")
 jun2021 <- read_csv("202106-divvy-tripdata.csv")
@@ -35,26 +35,28 @@ dec2021 <- read_csv("202112-divvy-tripdata.csv")
 jan2022 <- read_csv("202201-divvy-tripdata.csv")
 feb2022 <- read_csv("202202-divvy-tripdata.csv")
 
-##
 ## Combine all 12 dataframes into one dataframe named bike_rides
-##
 bike_rides <- rbind(mar2021,apr2021,may2021,jun2021,jul2021,aug2021,sep2021,
                     oct2021,nov2021,dec2021,jan2022,feb2022)
-##
-str(bike_rides)  # list of columns and datatypes
-##
+
+## list of columns and datatypes
+str(bike_rides) 
+
+## examine rows
+head(bike_rides)        # first 6 rows in dataframe
+
+## list column names
+colnames(bike_rides)   # list of column names in dataframe
+
+## number of rows
+nrow(bike_rides)     # number of rows in dataframe
 
 ##
-head(bike_rides)        # first 6 rows in dataframe
-##
-colnames(bike_rides)   # list of column names in dataframe
-##
-nrow(bike_rides)     # number of rows in dataframe
-##
 dim(bike_rides)      # dimensions or variables in dataframe
+
 ## 
 summary(bike_rides)  # statistical summary 
-##
+
 ## Adding to bike_rides dataframe columns for year, month, date, day of the week
 bike_rides$date <- as.Date(bike_rides$started_at)
 bike_rides$month <- format(as.Date(bike_rides$date), "%m")
@@ -67,11 +69,13 @@ colnames(bike_rides)
 
 ##
 head(bike_rides)   # verifying updated dataframe, first 6 rows
-##
+
 ## Adding column to calculate ride length duration per ride
 bike_rides$ride_length <- difftime(bike_rides$ended_at, bike_rides$started_at)
+
 ##
 str(bike_rides)    # Confirming ride_length added
+
 ##
 glimpse(bike_rides) # Confirming data type for ride_length
 
@@ -81,9 +85,6 @@ bike_rides$ride_length <- as.numeric(as.character(bike_rides$ride_length))
      
 ## Confirming data type changed successfully
 glimpse(bike_rides)     
-
-##
-
 
 ## Inspecting bad data that will need to be removed
 ## Bike rides with ride_length <=0
@@ -101,11 +102,10 @@ breaks <- hour(hm("00:00", "6:00", "12:00", "10:00", "23:59"))
 ## Creating labels
 labels <- c("Morning", "Afternoon", "Evening", "Night")
 
-## 
 ## Defining time of day: morning, afternoon, evening, night
 bike_rides$time_of_day <- cut(x=hour(bike_rides$started_at), 
             breaks = breaks, labels = labels, include.lowest = TRUE)
-##
+
 ## Check column names for updates
 colnames(bike_rides)
 
@@ -160,8 +160,6 @@ bike_rides %>%
                                     fill = member_casual), show.legend = TRUE) +
   labs(title = "Total rides by type of bike")
 
-
-
 ## Average ride by day of the week
 bike_rides %>%
   group_by(member_casual, day_of_week) %>%
@@ -180,7 +178,6 @@ bike_rides %>%
   geom_col(width = 0.5, position = position_dodge(width = 0.5)) + 
   labs(title = "Average ride length by month")
 
-
 ## Total number of rides by month
 bike_rides %>%
   group_by(member_casual, month) %>%
@@ -191,9 +188,6 @@ bike_rides %>%
   geom_col(width = 0.5, position = position_dodge(width = 0.5)) +
   scale_y_continuous(labels = function(x) format(x,scientific = FALSE))
 
-
-
-
 ## Average or mean distance traveled by member vs casual
 bike_rides %>%
   group_by(member_casual) %>%
@@ -203,7 +197,6 @@ bike_rides %>%
                       show.legend = FALSE) +
   labs(title = "Average distance traveled")
 
-
 ## Total number of rides by time of day morning, afternoon, evening, night
 bike_rides %>%
   group_by(member_casual, time_of_day) %>%
@@ -212,6 +205,5 @@ bike_rides %>%
                       fill = member_casual), show.legend = TRUE) +
   labs(title = "Total rides by time of the day")
 
-  
-  
+   
 #######
